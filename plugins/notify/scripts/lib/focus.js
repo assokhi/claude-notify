@@ -108,6 +108,20 @@ function muxPlan(hints) {
   }
 }
 
+// Escape a value before embedding it in an AppleScript double-quoted literal.
+// bundleId can come from the env ($__CFBundleIdentifier), so a stray quote/
+// backslash must not break out of (or inject into) the `tell application id`
+// string that runs on click.
+function escAppleScript(s) {
+  return String(s == null ? "" : s)
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"');
+}
+
+function activateScript(bundleId) {
+  return 'tell application id "' + escAppleScript(bundleId) + '" to activate';
+}
+
 // Build the ordered activation command plan for the given platform.
 // runtime: { platform = os.platform() }
 function plan(hints, runtime) {
@@ -118,7 +132,7 @@ function plan(hints, runtime) {
 
   if (platform === "darwin") {
     if (hints.bundleId) {
-      out.push(["osascript", ["-e", 'tell application id "' + hints.bundleId + '" to activate']]);
+      out.push(["osascript", ["-e", activateScript(hints.bundleId)]]);
     }
   } else if (platform === "linux") {
     // X11 only: activate the exact window captured via $WINDOWID. Wayland has no
@@ -158,7 +172,7 @@ function clickCommandString(hints, runtime) {
   if (platform !== "darwin") return "";
   const cmds = [];
   if (hints.bundleId) {
-    cmds.push(["osascript", ["-e", 'tell application id "' + hints.bundleId + '" to activate']]);
+    cmds.push(["osascript", ["-e", activateScript(hints.bundleId)]]);
   }
   for (const c of muxPlan(hints)) cmds.push(c);
   if (!cmds.length) return "";

@@ -196,6 +196,16 @@ test("plan on macOS activates the app by bundle id then switches mux", () => {
   ]);
 });
 
+test("plan on macOS escapes a bundle id with quotes/backslashes (AppleScript injection guard)", () => {
+  const evil = 'x" to activate\ntell application "Finder';
+  const out = focus.plan({ bundleId: evil }, { platform: "darwin", env: {} });
+  const script = out[0][1][1];
+  // backslashes doubled, double-quotes escaped — no unescaped " can close the literal
+  assert.ok(!/[^\\]"/.test(script.slice('tell application id '.length)) || script.includes('\\"'));
+  assert.ok(script.includes('\\"'), "embedded quote is escaped");
+  assert.ok(script.startsWith('tell application id "'));
+});
+
 test("plan on macOS with no bundle id returns only mux", () => {
   assert.deepEqual(
     focus.plan({ mux: { type: "wezterm", pane: "1" } }, { platform: "darwin", env: {} }),
