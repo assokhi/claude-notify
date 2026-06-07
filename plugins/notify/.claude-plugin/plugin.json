@@ -1,0 +1,66 @@
+{
+  "name": "notify",
+  "description": "Smart notifications for Claude Code. Classifies each turn from the transcript (task done / review / question / plan ready / session limit / API error) and fires a native desktop popup + per-status sound + terminal bell, with suppression, per-status config, and best-effort click-to-focus. Cross-platform, pure Node, zero dependencies.",
+  "version": "2.0.0",
+  "author": {
+    "name": "assokhi"
+  },
+  "keywords": [
+    "notification",
+    "desktop",
+    "sound",
+    "toast",
+    "hooks",
+    "alert",
+    "transcript",
+    "productivity"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "ExitPlanMode|AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/notify.js\" PreToolUse",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/notify.js\" Notification",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/notify.js\" Stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/notify.js\" SubagentStop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "desktop": {
+    "enabled": true,
+    "sound": true,
+    "terminalBell": true,
+    "volume": 1,
+    "appIcon": "",
+    "clickToFocus": true
+  },
+  "suppressQuestionAfterTaskCompleteSeconds": 12,
+  "suppressQuestionAfterAnyNotificationSeconds": 7,
+  "notifyOnSubagentStop": false,
+  "suppressForSubagents": true,
+  "notifyOnTextResponse": true,
+  "respectJudgeMode": true,
+  "suppressFilters": [],
+  "statuses": {
+    "task_complete": {
+      "enabled": true,
+      "title": "✅ Completed",
+      "sound": "${CLAUDE_PLUGIN_ROOT}/sounds/complete.wav"
+    },
+    "review_complete": {
+      "enabled": true,
+      "title": "🔍 Review",
+      "sound": "${CLAUDE_PLUGIN_ROOT}/sounds/complete.wav"
+    },
+    "question": {
+      "enabled": true,
+      "title": "❓ Question",
+      "sound": "${CLAUDE_PLUGIN_ROOT}/sounds/notification.wav"
+    },
+    "plan_ready": {
+      "enabled": true,
+      "title": "📋 Plan",
+      "sound": "${CLAUDE_PLUGIN_ROOT}/sounds/notification.wav"
+    },
+    "session_limit_reached": {
+      "enabled": true,
+      "title": "⏱️ Session Limit Reached",
+      "sound": "${CLAUDE_PLUGIN_ROOT}/sounds/notification.wav"
+    },
+    "api_error": {
+      "enabled": true,
+      "title": "🔴 API Error: 401",
+      "sound": "${CLAUDE_PLUGIN_ROOT}/sounds/notification.wav"
+    },
+    "api_error_overloaded": {
+      "enabled": true,
+      "title": "🔴 API Error",
+      "sound": "${CLAUDE_PLUGIN_ROOT}/sounds/notification.wav"
+    }
+  }
+}

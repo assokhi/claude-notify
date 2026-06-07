@@ -1,0 +1,10 @@
+{
+  "name": "claude-notify-plugin",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Smart notifications plugin for Claude Code (pure Node, zero deps)",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
