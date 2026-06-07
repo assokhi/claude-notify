@@ -3,9 +3,9 @@
   "owner": { "name": "assokhi" },
   "plugins": [
     {
-      "name": "notify-sounds",
-      "source": "./plugins/notify-sounds",
-      "description": "Cross-platform notification sounds for Claude Code: alert on question/input-needed, chime on turn complete."
+      "name": "notify",
+      "source": "./plugins/notify",
+      "description": "Smart Claude Code notifications: transcript-classified desktop popups + per-status sounds, suppression, config, best-effort click-to-focus. Pure Node, cross-platform."
     }
   ]
 }
