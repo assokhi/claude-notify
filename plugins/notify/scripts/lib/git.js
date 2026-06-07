@@ -46,6 +46,11 @@ function branch(arg) {
     const out = cp.execSync(cmd, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
+      // Bound the only blocking subprocess on the hook's critical path: a slow
+      // NFS/huge/pathological repo must not hang the notification. On timeout
+      // execSync throws -> the catch below returns "" (fail-open).
+      timeout: 1000,
+      maxBuffer: 1 << 16,
     });
     const b = (out == null ? "" : String(out)).trim();
     if (!b || b === "HEAD") return "";

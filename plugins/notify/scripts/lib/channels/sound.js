@@ -31,9 +31,13 @@ function candidates(platform, soundPath, volume) {
   }
 
   if (platform === "win32") {
+    // PowerShell single-quoted literal: escape an embedded quote by doubling it.
+    // Prevents both breakage (paths like C:\Users\O'Brien\...) and command
+    // injection from a config-supplied sound path.
+    const safe = String(soundPath).replace(/'/g, "''");
     const ps =
       "$p = New-Object System.Media.SoundPlayer '" +
-      soundPath +
+      safe +
       "'; $p.PlaySync();";
     return [
       ["powershell", ["-NoProfile", "-NonInteractive", "-Command", ps]],
@@ -57,25 +61,28 @@ function play(soundPath, opts = {}) {
     if (!soundPath) return;
     const platform = opts.platform || os.platform();
     const volume = opts.volume;
+    const spawnFn = opts.spawn || spawn; // injectable for tests
     const list = candidates(platform, soundPath, volume);
-    tryNext(list, 0);
+    tryNext(list, 0, spawnFn);
   } catch (_err) {
     // never throw
   }
 }
 
-function tryNext(list, i) {
+function tryNext(list, i, spawnFn) {
   if (i >= list.length) return; // no player available — stay silent
   const [cmd, args] = list[i];
   let child;
   try {
-    child = spawn(cmd, args, { stdio: "ignore", detached: true });
+    child = spawnFn(cmd, args, { stdio: "ignore", detached: true });
   } catch (_err) {
-    return tryNext(list, i + 1);
+    return tryNext(list, i + 1, spawnFn);
   }
-  child.on("error", () => tryNext(list, i + 1));
+  if (child && typeof child.on === "function") {
+    child.on("error", () => tryNext(list, i + 1, spawnFn));
+  }
   try {
-    child.unref();
+    if (child && typeof child.unref === "function") child.unref();
   } catch (_err) {
     /* ignore */
   }

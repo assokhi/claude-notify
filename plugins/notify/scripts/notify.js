@@ -208,7 +208,12 @@ function main() {
   // are captured for future use but focus fires only on macOS via clickCmd.
 
   try {
-    state.gc({});
+    // Retain state at least as long as the longest window that reads it (the
+    // 180s duplicate-message window + 12s cooldowns). gc sweeps every session's
+    // file, so a short retention would let a concurrent session's notification
+    // delete this session's still-needed state. Locks are short-lived (2s/5s)
+    // so dedup's default 60s is fine.
+    state.gc({ maxAgeSec: 600 });
     dedup.gc({});
   } catch (e) {
     /* best effort */

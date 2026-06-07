@@ -38,12 +38,6 @@ function bundleIdFor(env) {
   return "";
 }
 
-// True when the desktop environment looks like GNOME (for the Wayland fallback).
-function isGnome(env) {
-  const d = String((env && (env.XDG_CURRENT_DESKTOP || env.DESKTOP_SESSION)) || "").toLowerCase();
-  return d.indexOf("gnome") !== -1;
-}
-
 // Detect the active terminal multiplexer from the environment.
 // Returns { type, ...ids } or null. tmux takes priority (it commonly wraps the
 // others), then wezterm, kitty, zellij.
@@ -115,12 +109,11 @@ function muxPlan(hints) {
 }
 
 // Build the ordered activation command plan for the given platform.
-// runtime: { platform = os.platform(), env = process.env }
+// runtime: { platform = os.platform() }
 function plan(hints, runtime) {
   hints = hints || {};
   runtime = runtime || {};
   const platform = runtime.platform || os.platform();
-  const env = runtime.env || process.env || {};
   const out = [];
 
   if (platform === "darwin") {
@@ -128,17 +121,13 @@ function plan(hints, runtime) {
       out.push(["osascript", ["-e", 'tell application id "' + hints.bundleId + '" to activate']]);
     }
   } else if (platform === "linux") {
+    // X11 only: activate the exact window captured via $WINDOWID. Wayland has no
+    // reliable pure-Node window-activation path (it would need a window title or
+    // wm-class that nothing here can produce), so we fall through to the
+    // multiplexer plan below — best-effort, by design.
     if (hints.windowId) {
       out.push(["xdotool", ["windowactivate", "--sync", String(hints.windowId)]]);
       out.push(["wmctrl", ["-i", "-a", String(hints.windowId)]]);
-    } else if (isGnome(env) && hints.title) {
-      // Wayland/GNOME best-effort; requires a window-activation shell extension.
-      out.push(["busctl", [
-        "--user", "call",
-        "org.gnome.Shell", "/org/gnome/Shell/Extensions/WindowsExt",
-        "org.gnome.Shell.Extensions.WindowsExt", "ActivateWindowByTitle",
-        "s", String(hints.title),
-      ]]);
     }
   }
   // win32 window focus is intentionally not attempted.

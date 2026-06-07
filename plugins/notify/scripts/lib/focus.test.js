@@ -172,17 +172,12 @@ test("plan on linux with only a window id omits mux commands", () => {
   );
 });
 
-test("plan on GNOME without a window id uses the busctl title fallback", () => {
+test("plan on GNOME without a window id does NOT attempt a title-based focus (no producer sets title)", () => {
+  // captureHints never emits a `title`, so any title-based Wayland branch would
+  // be dead code. A linux hint with no windowId and no mux yields nothing.
   const hints = { title: "my session" };
   const runtime = { platform: "linux", env: { XDG_CURRENT_DESKTOP: "ubuntu:GNOME" } };
-  assert.deepEqual(focus.plan(hints, runtime), [
-    ["busctl", [
-      "--user", "call",
-      "org.gnome.Shell", "/org/gnome/Shell/Extensions/WindowsExt",
-      "org.gnome.Shell.Extensions.WindowsExt", "ActivateWindowByTitle",
-      "s", "my session",
-    ]],
-  ]);
+  assert.deepEqual(focus.plan(hints, runtime), []);
 });
 
 test("plan on linux without window id, gnome, or title only returns mux", () => {

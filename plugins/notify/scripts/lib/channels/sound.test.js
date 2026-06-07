@@ -130,3 +130,75 @@ test("play is fail-open: empty/falsy soundPath returns without throwing", () => 
   assert.doesNotThrow(() => sound.play(""));
   assert.doesNotThrow(() => sound.play(undefined, { platform: "linux" }));
 });
+
+// ---- win32: single-quote escaping (apostrophe paths + injection guard) ----
+
+test("win32: a single quote in the path is doubled (PowerShell literal escape)", () => {
+  const c = sound.candidates("win32", "C:\\Users\\O'Brien\\s.wav");
+  // O'Brien -> O''Brien inside the single-quoted PS literal
+  assert.ok(c[0][1][3].includes("O''Brien"));
+  assert.ok(!c[0][1][3].includes("O'Brien'"));
+});
+
+test("win32: injection attempt is neutralized by quote doubling", () => {
+  const evil = "x'; Remove-Item C:\\ -Recurse; '";
+  const ps = sound.candidates("win32", evil)[0][1][3];
+  // every original single quote becomes a doubled quote; no lone quote closes the literal early
+  assert.ok(ps.includes("x''; Remove-Item C:\\ -Recurse; ''"));
+});
+
+// ---- play(): tryNext fallback chain via injected spawn ----
+
+function fakeChild() {
+  return {
+    handlers: {},
+    on(ev, fn) { this.handlers[ev] = fn; return this; },
+    unref() { this.unrefed = true; },
+  };
+}
+
+test("play: spawns the first candidate and unrefs it", () => {
+  const spawned = [];
+  const child = fakeChild();
+  const spawn = (cmd, args) => { spawned.push([cmd, args]); return child; };
+  sound.play(SP, { platform: "linux", spawn });
+  assert.equal(spawned.length, 1);
+  assert.equal(spawned[0][0], "paplay");
+  assert.equal(child.unrefed, true);
+});
+
+test("play: a child 'error' advances to the next candidate", () => {
+  const spawned = [];
+  const children = [];
+  const spawn = (cmd, args) => { spawned.push(cmd); const c = fakeChild(); children.push(c); return c; };
+  sound.play(SP, { platform: "linux", spawn });
+  // simulate the first player failing to launch
+  children[0].handlers.error(new Error("ENOENT"));
+  assert.deepEqual(spawned, ["paplay", "pw-play"]);
+});
+
+test("play: exhausting all candidates stays silent without throwing", () => {
+  const spawned = [];
+  const children = [];
+  const spawn = (cmd) => { spawned.push(cmd); const c = fakeChild(); children.push(c); return c; };
+  assert.doesNotThrow(() => {
+    sound.play(SP, { platform: "linux", spawn });
+    // fail each in turn
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].handlers.error) children[i].handlers.error(new Error("nope"));
+    }
+  });
+  assert.deepEqual(spawned, ["paplay", "pw-play", "aplay", "ffplay", "play"]);
+});
+
+test("play: a synchronous spawn throw advances to the next candidate", () => {
+  const spawned = [];
+  let first = true;
+  const spawn = (cmd) => {
+    spawned.push(cmd);
+    if (first) { first = false; throw new Error("spawn EACCES"); }
+    return fakeChild();
+  };
+  assert.doesNotThrow(() => sound.play(SP, { platform: "linux", spawn }));
+  assert.deepEqual(spawned.slice(0, 2), ["paplay", "pw-play"]);
+});

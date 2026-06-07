@@ -17,11 +17,15 @@ const { spawn } = require("node:child_process");
 // escaping helpers
 // ---------------------------------------------------------------------------
 
-// AppleScript string escaping: backslash and double-quote.
+// AppleScript string escaping: backslash, double-quote, and newlines. A raw
+// newline inside an AppleScript double-quoted literal is a syntax error that
+// makes osascript emit nothing, so collapse CR/LF to the literal escape `\n`
+// (must run AFTER backslash doubling).
 function escAppleScript(s) {
   return String(s == null ? "" : s)
     .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"');
+    .replace(/"/g, '\\"')
+    .replace(/\r\n?|\n/g, "\\n");
 }
 
 // PowerShell single-quoted string escaping: a single quote is doubled.
@@ -198,7 +202,7 @@ function notify(opts, runtime = {}) {
 // bell() — best-effort terminal bell (BEL) on /dev/tty.
 function bell() {
   try {
-    fs.writeFileSync("/dev/tty", "");
+    fs.writeFileSync("/dev/tty", "\x07");
   } catch (_) {
     /* ignore */
   }

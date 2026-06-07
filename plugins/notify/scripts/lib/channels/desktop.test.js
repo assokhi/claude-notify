@@ -291,3 +291,24 @@ test("exports expected surface", () => {
     assert.equal(typeof desktop[name], "function", name + " should be a function");
   }
 });
+
+// --- osascript newline escaping (multi-line body must not break osascript) ---
+
+test("macCommand osascript: a multi-line body has no raw newline (escaped to \\n)", () => {
+  const { cmd, args } = desktop.macCommand(
+    { title: "T", body: "Line one.\nLine two.\r\nLine three." },
+    false // force the osascript branch
+  );
+  assert.equal(cmd, "osascript");
+  const script = args[1];
+  assert.ok(!/[\r\n]/.test(script), "script must contain no raw CR/LF");
+  assert.ok(script.includes("Line one.\\nLine two.\\nLine three."), "newlines become the literal \\n escape");
+});
+
+test("macCommand osascript: backslash doubling runs before newline escape", () => {
+  const { args } = desktop.macCommand({ title: "T", body: "a\\b\nc" }, false);
+  const script = args[1];
+  // backslash doubled, then newline -> \n ; no raw newline survives
+  assert.ok(!/[\r\n]/.test(script));
+  assert.ok(script.includes("a\\\\b\\nc"));
+});

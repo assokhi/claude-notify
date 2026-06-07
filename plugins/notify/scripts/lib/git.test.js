@@ -95,3 +95,22 @@ test("trims surrounding whitespace from the git branch", () => {
     assert.equal(git.branch({ entries: [], cwd: "/repo" }), "feature/login");
   });
 });
+
+test("passes a bounded timeout to execSync (no unbounded hang on the hook path)", () => {
+  let opts = null;
+  withExecSync((cmd, o) => { opts = o; return "main\n"; }, () => {
+    git.branch({ entries: [], cwd: "/repo" });
+  });
+  assert.ok(opts && typeof opts.timeout === "number" && opts.timeout > 0, "timeout must be set");
+  assert.ok(opts.timeout <= 5000, "timeout should be small");
+});
+
+test("a timeout/ETIMEDOUT throw becomes empty string (fail-open)", () => {
+  withExecSync(() => {
+    const e = new Error("Command timed out");
+    e.code = "ETIMEDOUT";
+    throw e;
+  }, () => {
+    assert.equal(git.branch({ entries: [], cwd: "/repo" }), "");
+  });
+});
