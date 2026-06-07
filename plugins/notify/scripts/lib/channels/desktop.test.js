@@ -140,6 +140,22 @@ test("linuxCommand: basic title + body positionals", () => {
   assert.ok(!r.args.includes("--icon"));
 });
 
+test("linuxCommand: subtitle is folded onto the first line of the body", () => {
+  const r = desktop.linuxCommand({ title: "✅ Completed", subtitle: "main · notify", body: "Task done" });
+  assert.equal(r.args[0], "✅ Completed");
+  assert.equal(r.args[1], "main · notify\nTask done");
+});
+
+test("linuxCommand: subtitle with no body becomes the body", () => {
+  const r = desktop.linuxCommand({ title: "T", subtitle: "main · notify" });
+  assert.equal(r.args[1], "main · notify");
+});
+
+test("linuxCommand: no subtitle leaves the body unchanged", () => {
+  const r = desktop.linuxCommand({ title: "T", body: "B" });
+  assert.equal(r.args[1], "B");
+});
+
 test("linuxCommand: urgent adds --urgency critical", () => {
   const r = desktop.linuxCommand({ title: "T", body: "B", urgent: true });
   assert.equal(flagVal(r.args, "--urgency"), "critical");

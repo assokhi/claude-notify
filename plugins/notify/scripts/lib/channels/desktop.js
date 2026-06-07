@@ -76,14 +76,19 @@ function macCommand(opts, hasTerminalNotifier) {
 // ---------------------------------------------------------------------------
 
 // linuxCommand(opts) -> notify-send <title> <body> [--icon icon] [--urgency critical]
+// notify-send has no subtitle field (only summary + body), so the subtitle
+// (branch · folder) is folded onto the first line of the body — otherwise that
+// context would be lost on Linux.
 function linuxCommand(opts) {
   opts = opts || {};
   const title = opts.title || "";
+  const subtitle = opts.subtitle || "";
   const body = opts.body || "";
   const icon = opts.icon || "";
   const urgent = !!opts.urgent;
 
-  const args = [title, body];
+  const fullBody = subtitle ? (body ? subtitle + "\n" + body : subtitle) : body;
+  const args = [title, fullBody];
   if (icon) args.push("--icon", icon);
   if (urgent) args.push("--urgency", "critical");
   return { cmd: "notify-send", args };
