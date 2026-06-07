@@ -1,0 +1,11 @@
+{
+  "name": "claude-notify",
+  "owner": { "name": "assokhi" },
+  "plugins": [
+    {
+      "name": "notify-sounds",
+      "source": "./plugins/notify-sounds",
+      "description": "Cross-platform notification sounds for Claude Code: alert on question/input-needed, chime on turn complete."
+    }
+  ]
+}
